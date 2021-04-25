@@ -11,33 +11,31 @@
 class CyclingEffect
 {
 public:
-    CyclingEffect();
-    void InitScreenBuffer();
-    virtual ~CyclingEffect();
+   CyclingEffect();
+   void InitScreenBuffer();
+   virtual ~CyclingEffect();
 
-    void ProcessInput();
-    void Render();
-    void Update();
-    void Delay();
-    void Quit();
-    void Clean();
+   void ProcessInput();
+   void Render();
+   void Update();
+   void Delay();
+   void Quit();
+   void Clean();
 
-    bool IsOver();
-    int GetTimePerFrame();
+   bool IsOver();
+   int GetTimePerFrame();
 
 protected:
-    virtual void InitColorLookup();
+   virtual void InitColorLookup();
 
-    SDL_Color* m_pPalette;
+   SDL_Color* m_pPalette;
 
-    SDL_Window* m_pWindow;
-    SDL_Renderer* m_pRenderer;
-    SDL_Texture* m_pTexture;
+   SDL_Window* m_pWindow;
 
-    SDL_Surface *m_pScreenBuffer;
-    SDL_Surface *m_pRGBBuffer;
+   SDL_Surface* m_pWindowSurface;
+   SDL_Surface* m_pScreenBuffer;
 
-    int m_iScreenWidth;
-    int m_iScreenHeight;
-    bool m_bIsOver;
+   int m_iScreenWidth;
+   int m_iScreenHeight;
+   bool m_bIsOver;
 };
