@@ -1,29 +1,49 @@
 #include "CyclingEffect.h"
 #include <iostream>
 
-CyclingEffect::CyclingEffect() : m_bIsOver(false)
+CyclingEffect::CyclingEffect()
+   : m_pPalette(nullptr),
+   m_pWindow(nullptr),
+   m_pWindowSurface(nullptr),
+   m_pScreenBuffer(nullptr),
+   m_iScreenWidth(iWidth),
+   m_iScreenHeight(iHeight),
+   m_bIsOver(false)
 {
-   //Initialize SDL
-   m_iScreenWidth = iWidth;
-   m_iScreenHeight = iHeight;
-
    if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
    {
       std::cout << "SDL failed to initialize! SDL_Error: " << SDL_GetError() << std::endl;
+      m_bIsOver = true;
+      return;
    }
 
    m_pWindow = SDL_CreateWindow("Palette Cycling Demo", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, m_iScreenWidth, m_iScreenHeight, SDL_WINDOW_SHOWN);
 
-   if (m_pWindow)
+   if (!m_pWindow)
    {
-      m_pWindowSurface = SDL_GetWindowSurface(m_pWindow);
+      std::cout << "SDL failed to create window! SDL_Error: " << SDL_GetError() << std::endl;
+      m_bIsOver = true;
+      return;
    }
+   m_pWindowSurface = SDL_GetWindowSurface(m_pWindow);
 
    // Create 8-bit screen buffer
    m_pScreenBuffer = SDL_CreateRGBSurface(0, m_iScreenWidth, m_iScreenHeight, 8, 0, 0, 0, 0);
+   if (!m_pScreenBuffer)
+   {
+      std::cout << "SDL failed to create screen buffer! SDL_Error: " << SDL_GetError() << std::endl;
+      m_bIsOver = true;
+      return;
+   }
    SDL_FillRect(m_pScreenBuffer, NULL, 0);
 
    InitColorLookup();
+   if (!m_pPalette)
+   {
+      std::cout << "Palette initialization failed." << std::endl;
+      m_bIsOver = true;
+      return;
+   }
 
    SDL_SetPaletteColors(m_pScreenBuffer->format->palette, m_pPalette, 0, iPaletteColorCount);
 
@@ -32,7 +52,13 @@ CyclingEffect::CyclingEffect() : m_bIsOver(false)
 
 void CyclingEffect::InitScreenBuffer()
 {
+   if (!m_pScreenBuffer)
+   {
+      return;
+   }
+
    uint8_t* pPixels = (uint8_t*)m_pScreenBuffer->pixels;
+   const int iPitch = m_pScreenBuffer->pitch;
 
    int iPaletteOffset = 0;
    int iAlternateWidth = 40;
@@ -67,7 +93,7 @@ void CyclingEffect::InitScreenBuffer()
          }
 
          iPaletteStretch++;
-         pPixels[m_iScreenWidth * y + x] = (iCurrentPaletteIndex + iPaletteOffset) % iPaletteColorCount;
+         pPixels[iPitch * y + x] = (iCurrentPaletteIndex + iPaletteOffset) % iPaletteColorCount;
       }
    }
 }
@@ -90,11 +116,14 @@ void CyclingEffect::Clean()
    SDL_FreeSurface(m_pScreenBuffer);
    m_pScreenBuffer = nullptr;
 
-   SDL_FreeSurface(m_pWindowSurface);
+   // SDL_GetWindowSurface() returns a window-owned surface.
    m_pWindowSurface = nullptr;
 
    SDL_DestroyWindow(m_pWindow);
    m_pWindow = nullptr;
+
+   delete[] m_pPalette;
+   m_pPalette = nullptr;
 
    SDL_Quit();
 }
@@ -122,6 +151,11 @@ void CyclingEffect::ProcessInput()
 
 void CyclingEffect::Update()
 {
+   if (!m_pPalette || !m_pScreenBuffer)
+   {
+      return;
+   }
+
    SDL_Color SaveColor = m_pPalette[0];
    for (int i = 0; i < iPaletteColorCount - 1; ++i)
    {
@@ -144,6 +178,11 @@ void CyclingEffect::Delay()
 
 void CyclingEffect::Render()
 {
+   if (!m_pScreenBuffer || !m_pWindowSurface || !m_pWindow)
+   {
+      return;
+   }
+
    SDL_BlitSurface(m_pScreenBuffer, nullptr, m_pWindowSurface, nullptr);
    SDL_UpdateWindowSurface(m_pWindow);
 }
